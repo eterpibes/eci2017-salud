@@ -1,0 +1,148 @@
+---
+title: "Kaggle_eterpibes_sergio1"
+output:
+  html_document: default
+  html_notebook:
+    code_folding: hide
+    fig_height: 6
+    fig_width: 10
+---
+
+
+
+```{r  echo=FALSE, message=FALSE, warning=FALSE, setup}
+#librerias necesarias
+
+
+#library (Biostrings) # Manipulacion de secuencias y alineamientos
+
+library(ggplot2)
+library(plotly)
+library (RColorBrewer)
+library(caret)
+library(tidyr)
+library(dplyr)
+#library(reshape2)
+#library(psych)
+#library(irlba)
+#library(fpc)
+#library(devtools)
+#install_github("ujjwalkarn/xda")
+library(xda)
+library(DT)
+library(zoo)
+library(dygraphs)
+```
+
+
+
+
+```{r echo=FALSE, warning= FALSE, message=FALSE }
+train<-read.csv("../data/train_data.txt", stringsAsFactors = TRUE)%>%
+                                        mutate(fecha_control=as.Date(fecha_control, '%Y-%m-%d'),
+                                               fecha_nacimiento=as.Date(fecha_nacimiento, '%Y-%m-%d'),
+                                               fecha_proximo_control=as.Date(fecha_proximo_control, '%Y-%m-%d'))
+test<-read.csv("../data/test_data.txt"  , stringsAsFactors = TRUE)%>%
+                                        mutate(fecha_control=as.Date(fecha_control, '%Y-%m-%d'),
+                                               fecha_nacimiento=as.Date(fecha_nacimiento, '%Y-%m-%d'),
+                                               fecha_proximo_control=as.Date(fecha_proximo_control, '%Y-%m-%d'))
+
+
+# ### check in detail
+
+
+num.cols <- names(which(sapply( train, function(x) is.numeric(x) )))
+
+
+
+```
+### Explor1 Datos numéricos - Train
+```{r echo=FALSE, warning= FALSE, message=FALSE }
+numxdatrain<-numSummary(train)
+datatable(round(numxdatrain,3) ,style = "default")
+write.csv(round(numxdatrain,3),"numxdatrain_num.csv",row.names = TRUE)
+
+
+```
+
+### Explor1 Datos numéricos - Test
+```{r echo=FALSE, warning= FALSE, message=FALSE }
+numxdatest<-numSummary(test)
+datatable(round(numxdatest,3),style = "default")
+write.csv(round(numxdatest,3),"numxdatest_num.csv",row.names = TRUE)
+
+```
+
+
+
+### Explor1 Datos Categoricos - Train
+```{r echo=FALSE, warning= FALSE, message=FALSE }
+
+#Plot(train%>%na.omit(),'decae')
+
+charxdatrain<-charSummary(train)
+datatable(charxdatrain)
+write.csv(charxdatrain,"charxdatrain_char.csv",row.names = TRUE)
+
+
+```
+
+
+
+
+### Explor1 Datos Categoricos - Test
+```{r echo=FALSE, warning= FALSE, message=FALSE }
+
+#Plot(train%>%na.omit(),'decae')
+
+charxdatrain<-charSummary(train)
+datatable(charxdatrain)
+write.csv(charxdatrain,"charxdatrain_char.csv",row.names = TRUE)
+
+```
+
+
+
+
+### Bmi  por fecha de nacimiento - Train 
+```{r  echo=FALSE,message=FALSE, warning=FALSE}
+tmp_TS<-zoo(train%>%select(bmi, fecha_nacimiento),order.by = (train$fecha_nacimiento))
+
+
+#the x values are passed as milliseconds, turn them into a date and extract month and day
+getMonthDay <- 'function(d) {
+                var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday","Saturday"];
+                var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun","Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                date = new Date(d);
+                return monthNames[date.getMonth()] + " "+ date.getUTCDate() +" " + dayNames[date.getDay()]   ; }'
+
+
+
+dygraph(tmp_TS, main = "Bmi x ") %>%
+  dyRangeSelector%>%
+  dyHighlight %>%dyOptions(drawPoints = TRUE, pointSize = 2)%>%
+  dyAxis("y", label = "Variation in %", valueRange = c(-15, 60))%>%
+  dyAxis("x",valueFormatter=JS(getMonthDay))
+```
+
+### Bmi  por fecha de nacimiento - Test 
+```{r  echo=FALSE,message=FALSE, warning=FALSE}
+tmp_TS<-zoo(test%>%select(bmi, fecha_nacimiento),order.by = (test$fecha_nacimiento))
+
+
+#the x values are passed as milliseconds, turn them into a date and extract month and day
+getMonthDay <- 'function(d) {
+                var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday","Saturday"];
+                var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun","Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                date = new Date(d);
+                return monthNames[date.getMonth()] + " "+ date.getUTCDate() +" " + dayNames[date.getDay()]   ; }'
+
+
+
+dygraph(tmp_TS, main = "Bmi x ") %>%
+  dyRangeSelector%>%
+  dyHighlight %>%dyOptions(drawPoints = TRUE, pointSize = 2)%>%
+  dyAxis("y", label = "Variation in %", valueRange = c(-15, 60))%>%
+  dyAxis("x",valueFormatter=JS(getMonthDay))
+```
+
