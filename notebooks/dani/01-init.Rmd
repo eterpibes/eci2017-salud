@@ -1,0 +1,194 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r packages, include=FALSE}
+library(plotly)
+library(tidyverse)
+library(magrittr)
+```
+
+```{r}
+raw_train <- read_csv(
+  "../../data/raw/train_data.txt",
+  col_types = cols(perimetro_encefalico = col_number())
+)
+```
+
+```{r}
+raw_test <- read_csv(
+  "../../data/raw/test_data.txt",
+  col_types = cols(perimetro_encefalico = col_number())
+)
+```
+
+```{r}
+df_salud <- bind_rows(raw_train, raw_test)
+```
+
+```{r}
+raw_train %>% glimpse
+```
+
+```{r}
+raw_train %>%
+  count(perimetro_encefalico) %>%
+  arrange(n) %>% View
+```
+
+```{r}
+de_moivre_plot <- function(df, column) {
+  column <- enquo(column)
+  
+  df %>%
+    count(!!column, decae) %>%
+    group_by(!!column) %>%
+    mutate(
+      prop = n / sum(n)
+    ) %>%
+    filter(decae == "True") %>%
+    plot_ly(
+      x = ~n
+    ) %>%
+    add_markers(
+      y = ~prop,
+      text = quo(!!column)
+    )
+}
+```
+
+```{r}
+ df_salud %>%
+    count(talla, decae) %>%
+    group_by(talla) %>%
+    mutate(
+      prop = n / sum(n)
+    ) %>%
+    filter(decae == "True") %>%
+    plot_ly(
+      x = ~n
+    ) %>%
+    add_markers(
+      y = ~prop,
+      text = ~talla
+    )
+```
+
+```{r}
+raw_train %>%
+  mutate(
+    perimetro_con_decimales = (perimetro_encefalico - floor(perimetro_encefalico)) > 0
+  ) %>%
+  count(decae) %>%
+  # group_by(perimetro_con_decimales) %>%
+  mutate(
+    prop = n / sum(n)
+  )
+```
+
+
+```{r}
+raw_train %>%
+  de_moivre_plot(talla)
+```
+
+```{r}
+raw_train %>%
+  filter(individuo %in% c(75687, 75557))
+```
+
+```{r}
+raw_train %>%
+  plot_ly() %>%
+  add_histogram(
+    x = ~bmi
+  )
+```
+
+```{r}
+as.numeric(as.Date("2013-12-13") - as.Date("2011-10-14")) / 365
+```
+
+Los niños se encogen, wtf?!
+
+```{r}
+df_salud %>%
+  arrange(individuo, fecha_control) %>%
+  group_by(individuo) %>%
+  mutate(
+    diff_talla = talla - lag(talla),
+    shrinkage = diff_talla > 11
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(diff_talla)) %>%
+  count(diff_talla) %>%
+  plot_ly(
+    x = ~diff_talla
+  ) %>%
+  add_bars(
+    y = ~n
+  )
+```
+
+```{r}
+df_salud %>%
+  count(fecha_nacimiento, sort = TRUE)
+```
+
+```{r}
+df_salud %>%
+  filter(fecha_nacimiento == '2013-09-19') %>%
+  arrange(fecha_control)
+```
+
+```{r}
+df_salud %>%
+  summarize(
+    min(fecha_control),
+    max(fecha_control),
+    min(fecha_nacimiento),
+    max(fecha_nacimiento),
+    max(fecha_proximo_control)
+  )
+```
+
+Copado, vemos qué tan estables son las variables para cada individuo
+
+```{r}
+df_salud %>%
+  group_by(individuo) %>%
+  filter(n() == 4) %>%
+  summarize_all(n_distinct) %>%
+  summary
+```
+
+```r
+
+  filter(!is.na(diff_talla), !is.na(decae)) %>%
+  count(shrinkage, decae) %>%
+  group_by(shrinkage) %>%
+  mutate(
+    prop = n / sum(n)
+  )
+```
+
+```{r}
+df_salud %>%
+  mutate(
+    edad = as.integer(as.numeric(fecha_control - fecha_nacimiento) / 365)
+  ) %>%
+  count(edad) %>%
+  plot_ly(
+    x = ~edad
+  ) %>%
+  add_bars(
+    y = ~n
+  )
+```
+
+```{r}
+df_salud
+```
+
+
